@@ -1,0 +1,23 @@
+{
+  "name": "groundtruth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "evals": "tsx evals/run.ts",
+    "seed-cache": "tsx scripts/seed-cache.ts",
+    "export-ui-data": "tsx scripts/export-ui-data.ts",
+    "redteam": "npm run seed-cache && tsx scripts/redteam.ts",
+    "test": "tsx scripts/test.ts",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run seed-cache && npm run typecheck && npm test && npm run evals"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.19",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
