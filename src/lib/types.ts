@@ -67,9 +67,11 @@ export const DocSchema = z.object({
   sourceSystem: z.enum(SOURCES),
   category: z.enum(CATEGORIES),
   sensitivity: z.enum(SENSITIVITY),
-  // allowedRoles: roles that may read this doc. For `public`/`internal`,
-  // this is informational; the resolver grants by tier. For `restricted`,
-  // this is the authoritative allow-list.
+  // allowedRoles: roles that may read this doc.
+  //   - public:     informational (anyone may read).
+  //   - internal:   empty => any employee may read; non-empty => role-scoped,
+  //                 requires employee AND a listed role (ENFORCED, not informational).
+  //   - restricted: the authoritative allow-list (empty => default deny).
   allowedRoles: z.array(z.enum(ROLES)),
   // owner present for traceability; orphaned owner => orphaned ACL edge case.
   owner: z.string().nullable(),
@@ -106,6 +108,7 @@ export interface AccessDecision {
     | "public-tier"
     | "internal-tier"
     | "internal-requires-employee"
+    | "internal-role-restricted"
     | "restricted-role-match"
     | "restricted-no-role"
     | "orphaned-acl";

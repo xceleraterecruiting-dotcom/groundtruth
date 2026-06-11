@@ -49,8 +49,9 @@ content to an unauthorized actor — directly, by citation, or by leaked phrase.
   trace visibility, but only ACL-allowed documents are placed in model context.
   Restricted documents are filtered **before** generation, not redacted after.
 - **Least privilege** (`canAccess`) — internal documents require an `employee`
-  role; restricted documents require a specific role; **empty allow-list ⇒
-  default deny** (orphaned-ACL case).
+  role, and if an internal doc carries an explicit allow-list it is role-scoped
+  (employee **and** a listed role); restricted documents require a specific role;
+  **empty restricted allow-list ⇒ default deny** (orphaned-ACL case).
 - **Deprecation ≠ access** — freshness is resolved separately from ACL; stale
   documents are dropped from context independently of permission.
 - **Leak validation** (`validateLeak`) — fails if any context source or cited
