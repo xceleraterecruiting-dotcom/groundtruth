@@ -175,9 +175,12 @@ export interface LeakValidation {
 }
 
 export interface CitationValidation {
-  // coverage = claims with a valid, source-grounded citation / total claims
+  // coverage = citation PRESENCE: claims that carry a citation / total claims.
+  // A fabricated-quote citation still counts here (it is caught by groundedness).
   coverage: number;
-  // groundedness = claims whose cited quote is actually present in the source
+  // groundedness = citation SUPPORT: claims whose cited quote is actually
+  // present in the cited source / total claims. Distinct from coverage; the two
+  // diverge when a claim cites a real source with a quote not in it.
   groundedness: number;
   invalidClaims: number;
 }
