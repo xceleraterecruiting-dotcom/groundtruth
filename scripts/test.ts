@@ -11,7 +11,7 @@ import assert from "node:assert";
 import { indexCorpus } from "../src/lib/embeddings";
 import { canAccess } from "../src/lib/permissions";
 import { retrieve } from "../src/lib/retrieve";
-import { validateLeak } from "../src/lib/validators";
+import { validateLeak, validateCitations } from "../src/lib/validators";
 import { decide, type EvalReport } from "../src/lib/decision";
 import { CORPUS } from "../data/corpus";
 import { PERSONA_BY_ID } from "../data/personas";
@@ -131,6 +131,30 @@ test("restricted phrase in answer text = leak", () => {
   const v = validateLeak(tr, corpus, ["245000"]);
   assert.equal(v.pass, false);
   assert.ok(v.leakedPhrases.includes("245000"));
+});
+
+console.log("\nvalidateCitations (coverage = presence, groundedness = support)");
+test("coverage and groundedness diverge on a cited-but-fabricated quote", () => {
+  const tr = fakeTrace("dana", []);
+  tr.answer.claims = [
+    // Grounded: quote is an exact substring of the cited source body.
+    {
+      text: "16 weeks of paid parental leave",
+      citation: { sourceId: "hr_parental_leave_2026", quote: "16 weeks of paid parental leave" },
+    },
+    // Cited but NOT grounded: real source id, fabricated quote not in the body.
+    {
+      text: "fabricated",
+      citation: { sourceId: "hr_parental_leave_2026", quote: "this exact text does not appear in the source" },
+    },
+  ];
+  const cit = validateCitations(tr, corpus);
+  // Both claims carry a citation -> coverage (presence) = 1.
+  assert.equal(cit.coverage, 1);
+  // Only one quote is supported -> groundedness (support) = 0.5. They diverge.
+  assert.equal(cit.groundedness, 0.5);
+  // The fabricated citation is surfaced, not silently passed.
+  assert.equal(cit.invalidClaims, 1);
 });
 
 console.log("\ndecide (scoped launch decision)");
