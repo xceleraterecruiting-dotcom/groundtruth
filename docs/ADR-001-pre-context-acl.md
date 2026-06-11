@@ -40,8 +40,9 @@ access-control decision made against structured metadata.
 ## What this prototype models
 
 - Actor → role resolution against a synthetic persona set.
-- Document-level ACL: `public` (anyone), `internal` (requires `employee`),
-  `restricted` (requires a specific role; empty allow-list ⇒ default-deny).
+- Document-level ACL: `public` (anyone), `internal` (requires `employee`; if an
+  explicit allow-list is present, also a role match), `restricted` (requires a
+  specific role; empty allow-list ⇒ default-deny).
 - Pre-context filtering with a visible considered/denied/in-context trace.
 - Freshness handled separately from access (deprecation is not a permission).
 - Leak and citation validation as independent post-checks (defense in depth).
