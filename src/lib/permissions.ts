@@ -32,9 +32,21 @@ export function canAccess(persona: Persona, doc: Doc): AccessDecision {
   if (doc.sensitivity === "internal") {
     // Least privilege: internal docs require an employee role. An external
     // actor (e.g. auditor with no employee role) is denied internal content.
-    return roles.has("employee")
-      ? { ok: true, reason: "internal-tier" }
-      : { ok: false, reason: "internal-requires-employee" };
+    if (!roles.has("employee")) {
+      return { ok: false, reason: "internal-requires-employee" };
+    }
+    // Internal allowedRoles are ENFORCED, not informational: an internal doc
+    // tagged with an explicit allow-list is role-scoped and requires employee
+    // AND a listed role. An empty allow-list means any employee may read it.
+    // (This mirrors real enterprise tiers, where "internal" is a base
+    // visibility level that role/group ACLs can still narrow.)
+    if (doc.allowedRoles.length > 0) {
+      for (const r of doc.allowedRoles) {
+        if (roles.has(r)) return { ok: true, reason: "internal-tier" };
+      }
+      return { ok: false, reason: "internal-role-restricted" };
+    }
+    return { ok: true, reason: "internal-tier" };
   }
 
   // Restricted: default deny, allow-list only.

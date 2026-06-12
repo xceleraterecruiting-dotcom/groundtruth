@@ -11,7 +11,7 @@ import assert from "node:assert";
 import { indexCorpus } from "../src/lib/embeddings";
 import { canAccess } from "../src/lib/permissions";
 import { retrieve } from "../src/lib/retrieve";
-import { validateLeak } from "../src/lib/validators";
+import { validateLeak, validateCitations } from "../src/lib/validators";
 import { decide, type EvalReport } from "../src/lib/decision";
 import { CORPUS } from "../data/corpus";
 import { PERSONA_BY_ID } from "../data/personas";
@@ -39,6 +39,7 @@ const byId = (id: string): Doc => {
 };
 const dana = PERSONA_BY_ID["dana"];
 const maria = PERSONA_BY_ID["maria"];
+const tom = PERSONA_BY_ID["tom"]; // sales employee (not eng)
 
 console.log("\ncanAccess");
 test("public doc readable by anyone", () => {
@@ -71,6 +72,27 @@ test("external auditor (no employee role) DENIED internal docs", () => {
 test("external auditor CAN read public docs", () => {
   const ext = PERSONA_BY_ID["ext_auditor"];
   assert.equal(canAccess(ext, byId("marketing_one_pager")).ok, true);
+});
+
+test("internal doc with NO allow-list is readable by any employee", () => {
+  const internalOpen: Doc = {
+    id: "test_internal_open", title: "t", sourceSystem: "eng_wiki",
+    category: "eng_docs", sensitivity: "internal", allowedRoles: [],
+    owner: "x", updatedAt: "2026-01-01", deprecated: false, supersededBy: null, body: "b",
+  };
+  assert.equal(canAccess(tom, internalOpen).ok, true); // sales employee
+  assert.equal(canAccess(dana, internalOpen).ok, true); // eng employee
+});
+test("internal doc WITH allow-list requires a matching role (enforced, not informational)", () => {
+  const engOnly = byId("eng_deploy_guide_v2"); // internal, allowedRoles ["eng"]
+  assert.equal(canAccess(dana, engOnly).ok, true); // dana has eng
+  const t = canAccess(tom, engOnly); // tom is an employee but not eng
+  assert.equal(t.ok, false);
+  assert.equal(t.reason, "internal-role-restricted");
+});
+test("restricted still requires the explicit role (unchanged by internal change)", () => {
+  assert.equal(canAccess(dana, byId("comp_eng_bands_2026")).ok, false);
+  assert.equal(canAccess(maria, byId("comp_eng_bands_2026")).ok, true);
 });
 
 console.log("\nretrieve (pre-context ACL enforcement)");
@@ -131,6 +153,30 @@ test("restricted phrase in answer text = leak", () => {
   const v = validateLeak(tr, corpus, ["245000"]);
   assert.equal(v.pass, false);
   assert.ok(v.leakedPhrases.includes("245000"));
+});
+
+console.log("\nvalidateCitations (coverage = presence, groundedness = support)");
+test("coverage and groundedness diverge on a cited-but-fabricated quote", () => {
+  const tr = fakeTrace("dana", []);
+  tr.answer.claims = [
+    // Grounded: quote is an exact substring of the cited source body.
+    {
+      text: "16 weeks of paid parental leave",
+      citation: { sourceId: "hr_parental_leave_2026", quote: "16 weeks of paid parental leave" },
+    },
+    // Cited but NOT grounded: real source id, fabricated quote not in the body.
+    {
+      text: "fabricated",
+      citation: { sourceId: "hr_parental_leave_2026", quote: "this exact text does not appear in the source" },
+    },
+  ];
+  const cit = validateCitations(tr, corpus);
+  // Both claims carry a citation -> coverage (presence) = 1.
+  assert.equal(cit.coverage, 1);
+  // Only one quote is supported -> groundedness (support) = 0.5. They diverge.
+  assert.equal(cit.groundedness, 0.5);
+  // The fabricated citation is surfaced, not silently passed.
+  assert.equal(cit.invalidClaims, 1);
 });
 
 console.log("\ndecide (scoped launch decision)");
