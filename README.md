@@ -12,6 +12,12 @@ GroundTruth is the gate that produces that go/no-go decision, scoped by category
 > **Synthetic data only.** This project never connects to Glean, any customer
 > system, or any private data. All documents, personas, and ACLs are invented.
 
+## For reviewers
+
+Fastest inspection path: `npm install && npm run verify`. Then read, in order:
+`src/lib/permissions.ts` (the access decision), `evals/run.ts` (the gate), and
+`src/lib/decision.ts` (the scoped launch call).
+
 ## Quick start
 
 ```bash
