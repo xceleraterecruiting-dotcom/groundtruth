@@ -67,9 +67,11 @@ export const DocSchema = z.object({
   sourceSystem: z.enum(SOURCES),
   category: z.enum(CATEGORIES),
   sensitivity: z.enum(SENSITIVITY),
-  // allowedRoles: roles that may read this doc. For `public`/`internal`,
-  // this is informational; the resolver grants by tier. For `restricted`,
-  // this is the authoritative allow-list.
+  // allowedRoles: roles that may read this doc.
+  //   - public:     informational (anyone may read).
+  //   - internal:   empty => any employee may read; non-empty => role-scoped,
+  //                 requires employee AND a listed role (ENFORCED, not informational).
+  //   - restricted: the authoritative allow-list (empty => default deny).
   allowedRoles: z.array(z.enum(ROLES)),
   // owner present for traceability; orphaned owner => orphaned ACL edge case.
   owner: z.string().nullable(),
@@ -106,6 +108,7 @@ export interface AccessDecision {
     | "public-tier"
     | "internal-tier"
     | "internal-requires-employee"
+    | "internal-role-restricted"
     | "restricted-role-match"
     | "restricted-no-role"
     | "orphaned-acl";
@@ -175,9 +178,12 @@ export interface LeakValidation {
 }
 
 export interface CitationValidation {
-  // coverage = claims with a valid, source-grounded citation / total claims
+  // coverage = citation PRESENCE: claims that carry a citation / total claims.
+  // A fabricated-quote citation still counts here (it is caught by groundedness).
   coverage: number;
-  // groundedness = claims whose cited quote is actually present in the source
+  // groundedness = citation SUPPORT: claims whose cited quote is actually
+  // present in the cited source / total claims. Distinct from coverage; the two
+  // diverge when a claim cites a real source with a quote not in it.
   groundedness: number;
   invalidClaims: number;
 }

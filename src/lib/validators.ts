@@ -9,10 +9,16 @@
 //   - a restricted canary phrase appears in any CLAIM text
 //   - a restricted canary phrase appears in any CITATION quote
 //
-// validateCitations (review #5): coverage = claims with a citation whose quote
-//   actually appears in the cited source. We also surface uncited/invalid
-//   claims so unsupported text cannot pass silently. Groundedness is a
-//   DETERMINISTIC QUOTE-SUPPORT PROXY (honest label), not semantic entailment.
+// validateCitations (review #5): two DISTINCT metrics — do not conflate them.
+//   - coverage = citation PRESENCE: fraction of claims that carry a citation at
+//     all (vs. bare, uncited assertions). A citation with a fabricated quote
+//     still counts toward coverage.
+//   - groundedness = citation SUPPORT: fraction of claims whose cited quote
+//     actually appears in the cited source. This is a DETERMINISTIC
+//     QUOTE-SUPPORT PROXY (honest label), not semantic entailment.
+//   They diverge when a claim cites a real source with a quote not in it:
+//   coverage counts it, groundedness does not. We also surface uncited/invalid
+//   claims so unsupported text cannot pass silently.
 // ============================================================================
 
 import type {
