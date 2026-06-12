@@ -30,7 +30,7 @@ Individual scripts: `npm run seed-cache`, `npm run typecheck`, `npm test`,
 Reproduce the same **safety and quality gates** exactly:
 
 - `npm run typecheck` — clean (no errors)
-- `npm test` — **18 passed, 0 failed**
+- `npm test` — **22 passed, 0 failed**
 - `npm run evals` — 16/16 golden, **0/20 leak**, 18/18 abstention, 2/2 no-answer,
   2/2 conflict → **PASS_FOR_LIMITED_PILOT**, exit 0
 
